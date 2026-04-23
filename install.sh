@@ -212,7 +212,16 @@ prepare_project() {
         log_info "从GitHub克隆项目: $GITHUB_REPO"
         rm -rf "$PROJECT_DIR"
         git clone "$GITHUB_REPO" "$PROJECT_DIR"
-        log_success "项目克隆完成"
+
+        # 切换到最新tag版本
+        cd "$PROJECT_DIR"
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git tag -l | sort -V | tail -1 || echo "")
+        if [[ -n "$LATEST_TAG" ]]; then
+            git checkout "$LATEST_TAG" 2>/dev/null || true
+            log_info "已切换到最新版本: $LATEST_TAG"
+        fi
+
+        log_success "项目克隆完成 (版本: ${LATEST_TAG:-main})"
     else
         log_info "复制本地项目文件..."
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -220,7 +229,9 @@ prepare_project() {
         cp -r "$SCRIPT_DIR/server" "$PROJECT_DIR/"
         cp -r "$SCRIPT_DIR/client" "$PROJECT_DIR/"
         cp "$SCRIPT_DIR/docker-compose.yml" "$PROJECT_DIR/"
+        cp "$SCRIPT_DIR/install.sh" "$PROJECT_DIR/" 2>/dev/null || true
         cp "$SCRIPT_DIR/uninstall.sh" "$PROJECT_DIR/" 2>/dev/null || true
+        cp "$SCRIPT_DIR/update.sh" "$PROJECT_DIR/" 2>/dev/null || true
         cp "$SCRIPT_DIR/server/.env.example" "$PROJECT_DIR/server/" 2>/dev/null || true
         log_success "项目文件复制完成"
     fi
@@ -391,6 +402,7 @@ show_info() {
     echo "   查看状态: docker compose ps"
     echo "   查看日志: docker compose logs -f"
     echo "   重启服务: systemctl restart opmp"
+    echo "   更新:     sudo bash $PROJECT_DIR/update.sh"
     echo "   卸载:     sudo bash $PROJECT_DIR/uninstall.sh"
     echo ""
     echo -e "${YELLOW}⚠️  生产环境请修改默认密码和JWT_SECRET!${NC}"
