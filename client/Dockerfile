@@ -1,6 +1,6 @@
 # OPMP Client - Vue 3 Frontend
 # 阶段1: 构建
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 LABEL maintainer="OPMP Team"
 LABEL version="1.0.0"

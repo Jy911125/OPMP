@@ -1,6 +1,6 @@
 # OPMP Server - Node.js Backend
 # 使用阿里云镜像加速
-FROM node:22-alpine
+FROM node:24-alpine
 
 LABEL maintainer="OPMP Team"
 LABEL version="1.0.0"
