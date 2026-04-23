@@ -48,60 +48,36 @@
 
 ---
 
-## 安装指南
+## 安装
 
-### 第一步：安装前置依赖
+### 方式一：一键安装（推荐）
 
-在运行 `install.sh` 之前，你需要确保系统已安装 **git**。
-
-#### Ubuntu 24.04 通常已预装 git，如果没有：
+无需预装任何软件，一行命令搞定：
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y git
+curl -fsSL https://raw.githubusercontent.com/Jy911125/OPMP/main/install.sh | sudo bash
 ```
 
-### 第二步：克隆项目仓库
+脚本会自动完成所有操作：
+- 安装 git、curl 等基础依赖
+- 安装 Docker & Docker Compose
+- 从 GitHub 克隆项目
+- 构建Docker镜像
+- 生成JWT密钥、配置环境变量
+- 启动服务 & 创建开机自启
+- 配置防火墙
+
+### 方式二：克隆后安装
 
 ```bash
 git clone https://github.com/Jy911125/OPMP.git
-cd OPMP
+cd OPMP && sudo bash install.sh
 ```
-
-### 第三步：运行一键安装脚本
-
-```bash
-sudo bash install.sh
-```
-
-> `install.sh` 会自动完成以下所有操作，无需手动干预：
-> - 安装 Docker & Docker Compose（如果未安装）
-> - 安装其他系统依赖（curl, wget, openssl 等）
-> - 构建Docker镜像
-> - 配置环境变量（自动生成JWT密钥）
-> - 启动服务
-> - 创建Systemd开机自启服务
-> - 配置防火墙规则
 
 ### 安装完成后访问
 
 - **Web界面**: http://服务器IP:8080
 - **API接口**: http://服务器IP:3000
-
----
-
-## 完整安装流程（复制粘贴即可）
-
-```bash
-# 1. 更新系统 & 安装git
-sudo apt-get update && sudo apt-get install -y git
-
-# 2. 克隆仓库
-git clone https://github.com/Jy911125/OPMP.git
-
-# 3. 进入目录 & 一键安装
-cd OPMP && sudo bash install.sh
-```
 
 ---
 
@@ -200,10 +176,7 @@ OPMP/
 │       ├── api/               # Axios API封装
 │       ├── router/            # Vue Router路由
 │       └── assets/            # 样式资源
-└── docs/                      # 项目文档
-    ├── OPMP虚拟数字监控平台可行性及功能分析方案.md
-    ├── OPMP虚拟数字监控平台开发进度报告.md
-    └── OPMP虚拟数字监控平台优化与建议分析报告.md
+└── README.md                      # 项目说明
 ```
 
 ---
