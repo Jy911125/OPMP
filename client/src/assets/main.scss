@@ -1,0 +1,135 @@
+:root {
+  --opmp-bg: #0a0e17;
+  --opmp-bg-secondary: #111827;
+  --opmp-bg-card: #1a2332;
+  --opmp-border: #2a3544;
+  --opmp-text: #e2e8f0;
+  --opmp-text-secondary: #94a3b8;
+  --opmp-primary: #3b82f6;
+  --opmp-success: #22c55e;
+  --opmp-warning: #f59e0b;
+  --opmp-danger: #ef4444;
+  --opmp-info: #06b6d4;
+  --opmp-sidebar-width: 220px;
+  --opmp-header-height: 56px;
+}
+
+html.dark {
+  --el-bg-color: var(--opmp-bg);
+  --el-bg-color-overlay: var(--opmp-bg-card);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--opmp-bg);
+  color: var(--opmp-text);
+  overflow: hidden;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--opmp-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--opmp-text-secondary);
+}
+
+// Element Plus overrides
+.el-table {
+  --el-table-bg-color: var(--opmp-bg-card);
+  --el-table-tr-bg-color: var(--opmp-bg-card);
+  --el-table-header-bg-color: var(--opmp-bg-secondary);
+  --el-table-border-color: var(--opmp-border);
+  --el-table-text-color: var(--opmp-text);
+  --el-table-header-text-color: var(--opmp-text-secondary);
+}
+
+.el-card {
+  --el-card-bg-color: var(--opmp-bg-card);
+  --el-card-border-color: var(--opmp-border);
+}
+
+.el-dialog {
+  --el-dialog-bg-color: var(--opmp-bg-card);
+}
+
+// Utility classes
+.page-container {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.stat-card {
+  background: var(--opmp-bg-card);
+  border: 1px solid var(--opmp-border);
+  border-radius: 8px;
+  padding: 20px;
+  transition: border-color 0.3s;
+
+  &:hover {
+    border-color: var(--opmp-primary);
+  }
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--opmp-text);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--opmp-text-secondary);
+  margin-top: 4px;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.running {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--opmp-success);
+  }
+
+  &.stopped {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--opmp-danger);
+  }
+
+  &.paused {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--opmp-warning);
+  }
+}
