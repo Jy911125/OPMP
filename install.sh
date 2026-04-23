@@ -126,6 +126,12 @@ install_docker() {
             log_info "启动Docker服务..."
             systemctl start docker
         fi
+
+        # 检查并配置镜像加速
+        if [[ ! -f /etc/docker/daemon.json ]] || ! grep -q "registry-mirrors" /etc/docker/daemon.json 2>/dev/null; then
+            configure_docker_mirror
+        fi
+
         return 0
     fi
 
@@ -143,11 +149,40 @@ install_docker() {
     systemctl start docker
     systemctl enable docker
 
+    # 配置Docker国内镜像加速
+    configure_docker_mirror
+
     if [[ -n "$SUDO_USER" ]]; then
         usermod -aG docker "$SUDO_USER" 2>/dev/null || true
     fi
 
     log_success "Docker安装完成: $(docker --version)"
+}
+
+# 配置Docker镜像加速
+configure_docker_mirror() {
+    log_info "配置Docker镜像加速..."
+
+    mkdir -p /etc/docker
+
+    cat > /etc/docker/daemon.json << 'EOF'
+{
+    "registry-mirrors": [
+        "https://docker.1ms.run",
+        "https://docker.xuanyuan.me"
+    ],
+    "log-opts": {
+        "max-size": "10m",
+        "max-file": "3"
+    },
+    "storage-driver": "overlay2"
+}
+EOF
+
+    systemctl daemon-reload
+    systemctl restart docker
+
+    log_success "Docker镜像加速配置完成"
 }
 
 # 检查并安装Docker Compose

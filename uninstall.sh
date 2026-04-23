@@ -199,6 +199,12 @@ remove_docker_resources() {
         done
         log_success "Docker卷已删除"
     fi
+
+    # 删除node-modules缓存卷
+    if docker volume ls -q | grep -q "node-modules-cache"; then
+        docker volume rm node-modules-cache 2>/dev/null || true
+        log_success "Node模块缓存卷已删除"
+    fi
 }
 
 # 删除Systemd服务文件

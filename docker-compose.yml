@@ -1,24 +1,27 @@
 version: '3.8'
 
 services:
-  # OPMP Backend Server
+  # OPMP 后端服务
   opmp-server:
     build:
       context: ./server
       dockerfile: Dockerfile
+    image: opmp-server:1.0.0
     container_name: opmp-server
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      # Docker socket for Docker API access
+      # Docker socket - 用于操作Docker API
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # System info (read-only)
+      # 系统信息 (只读)
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /etc:/host/etc:ro
-      # Log directory
+      # 日志持久化
       - opmp-logs:/var/log/opmp
+      # 共享node_modules (加速后续构建)
+      - node-modules-cache:/app/node_modules
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -42,11 +45,12 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # OPMP Frontend Client (Nginx)
+  # OPMP 前端服务 (Nginx)
   opmp-client:
     build:
       context: ./client
       dockerfile: Dockerfile
+    image: opmp-client:1.0.0
     container_name: opmp-client
     restart: unless-stopped
     ports:
@@ -71,7 +75,14 @@ services:
 networks:
   opmp-network:
     driver: bridge
+    name: opmp-network
 
 volumes:
+  # 日志持久化
   opmp-logs:
     driver: local
+    name: opmp-logs
+  # Node模块共享缓存 (多个Node项目可复用)
+  node-modules-cache:
+    driver: local
+    name: node-modules-cache
