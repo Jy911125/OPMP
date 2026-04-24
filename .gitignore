@@ -7,12 +7,10 @@ dist/
 **/dist/
 build/
 
-# Environment files
-.env
+# Environment files (local overrides only)
 .env.local
 .env.production
-**/.env
-!**/.env.example
+*.local.env
 
 # Logs
 logs/
