@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push *)",
+      "Bash(gh pr *)",
+      "Bash(gh auth *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git tag *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(winget install *)",
+      "Bash(choco install *)",
+      "Bash(gh --version)",
+      "Bash(where gh *)",
+      "Bash(cmd.exe /c \"where gh\")",
+      "Bash(powershell.exe -Command \"Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --base develop --title 'fix: 修复install.sh在安装目录执行时因cp同文件报错导致退出' --body ' *)",
+      "Bash(git branch *)",
+      "Bash(gh api *)"
+    ]
+  }
+}
