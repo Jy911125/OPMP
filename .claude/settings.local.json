@@ -18,7 +18,8 @@
       "Bash(powershell.exe -Command \"Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
       "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --base develop --title 'fix: 修复install.sh在安装目录执行时因cp同文件报错导致退出' --body ' *)",
       "Bash(git branch *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(git remote *)"
     ]
   }
 }

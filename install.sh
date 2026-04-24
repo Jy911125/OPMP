@@ -28,6 +28,7 @@ NC='\033[0m'
 PROJECT_NAME="OPMP"
 PROJECT_DIR="/opt/opmp"
 GITHUB_REPO="https://github.com/Jy911125/OPMP.git"
+SCRIPT_VERSION="1.0.8"
 
 # 安装模式
 INSTALL_MODE="clone"
@@ -645,6 +646,7 @@ main() {
     echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                                                  ║${NC}"
     echo -e "${GREEN}║     OPMP 虚拟数字监控平台 - 一键安装            ║${NC}"
+    echo -e "${GREEN}║     版本: ${SCRIPT_VERSION}                               ║${NC}"
     echo -e "${GREEN}║     适用于 Ubuntu 24.04 LTS                      ║${NC}"
     echo -e "${GREEN}║     GitHub: https://github.com/Jy911125/OPMP     ║${NC}"
     echo -e "${GREEN}║                                                  ║${NC}"
