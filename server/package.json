@@ -1,6 +1,6 @@
 {
   "name": "opmp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "OPMP Virtual Digital Monitoring Platform - Backend Server",
   "main": "dist/app.js",
   "scripts": {
