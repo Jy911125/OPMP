@@ -20,8 +20,8 @@ COPY client/tsconfig.json ./
 COPY client/tsconfig.node.json ./
 COPY client/vite.config.ts ./
 
-# 安装前端依赖
-RUN npm ci
+# 安装前端依赖（使用install而非ci，兼容无锁文件情况）
+RUN npm install --prefer-offline --no-audit
 
 # 复制前端源代码
 COPY client/src ./src
@@ -52,7 +52,7 @@ COPY server/package*.json ./
 COPY server/tsconfig.json ./
 
 # 安装所有依赖（包括devDependencies用于构建）
-RUN npm ci
+RUN npm install --prefer-offline --no-audit
 
 # 复制后端源代码
 COPY server/src ./src
@@ -66,7 +66,7 @@ RUN npm run build
 FROM node:24-alpine
 
 LABEL maintainer="OPMP Team"
-LABEL version="1.0.3"
+LABEL version="1.0.4"
 LABEL description="OPMP Virtual Digital Monitoring Platform - Server"
 
 # 设置npm国内镜像
@@ -82,7 +82,7 @@ WORKDIR /app
 COPY server/package*.json ./
 
 # 只安装生产依赖
-RUN npm ci --only=production
+RUN npm install --only=production --prefer-offline --no-audit
 
 # 从构建阶段复制后端产物
 COPY --from=backend-builder /app/dist ./dist

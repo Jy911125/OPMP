@@ -238,26 +238,52 @@ prepare_project() {
     log_step "准备项目文件..."
 
     if [[ "$INSTALL_MODE" == "existing" ]]; then
-        log_info "项目已存在于 $PROJECT_DIR，跳过文件准备"
         cd "$PROJECT_DIR"
 
-        # 尝试拉取最新版本
+        # 检查是否有git目录
         if [[ -d "$PROJECT_DIR/.git" ]]; then
-            log_info "检查更新..."
+            log_info "检测到Git仓库，尝试更新..."
             git fetch --tags 2>/dev/null || true
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git tag -l | sort -V | tail -1 || echo "")
+            LATEST_TAG=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || git tag -l | sort -V | tail -1 || echo "")
             if [[ -n "$LATEST_TAG" ]]; then
                 CURRENT_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")
                 if [[ "$CURRENT_TAG" != "$LATEST_TAG" ]]; then
+                    # 备份环境配置
+                    [[ -f "$PROJECT_DIR/.env" ]] && cp "$PROJECT_DIR/.env" /tmp/opmp-env-backup
                     git checkout "$LATEST_TAG" 2>/dev/null || true
+                    # 恢复环境配置
+                    [[ -f /tmp/opmp-env-backup ]] && mv /tmp/opmp-env-backup "$PROJECT_DIR/.env"
                     log_info "已更新到版本: $LATEST_TAG"
                 else
                     log_info "当前已是最新版本: $LATEST_TAG"
                 fi
             fi
-        fi
+            log_success "项目文件已就位"
+        else
+            # 没有git目录，需要重新克隆
+            log_warning "项目目录存在但非Git仓库，重新克隆以获取最新版本..."
 
-        log_success "项目文件已就位"
+            # 备份环境配置和日志
+            [[ -f "$PROJECT_DIR/.env" ]] && cp "$PROJECT_DIR/.env" /tmp/opmp-env-backup
+            [[ -d "$PROJECT_DIR/logs" ]] && mv "$PROJECT_DIR/logs" /tmp/opmp-logs-backup 2>/dev/null || true
+
+            # 删除旧目录并重新克隆
+            rm -rf "$PROJECT_DIR"
+            git clone "$GITHUB_REPO" "$PROJECT_DIR"
+            cd "$PROJECT_DIR"
+
+            # 切换到最新tag
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git tag -l | sort -V | tail -1 || echo "")
+            if [[ -n "$LATEST_TAG" ]]; then
+                git checkout "$LATEST_TAG" 2>/dev/null || true
+            fi
+
+            # 恢复环境配置
+            [[ -f /tmp/opmp-env-backup ]] && mv /tmp/opmp-env-backup "$PROJECT_DIR/.env"
+            [[ -d /tmp/opmp-logs-backup ]] && mv /tmp/opmp-logs-backup "$PROJECT_DIR/logs" 2>/dev/null || true
+
+            log_success "项目克隆完成 (版本: ${LATEST_TAG:-main})"
+        fi
 
     elif [[ "$INSTALL_MODE" == "clone" ]]; then
         log_info "从GitHub克隆项目: $GITHUB_REPO"
@@ -379,7 +405,7 @@ build_images() {
     docker builder prune -f 2>/dev/null || true
 
     # 移除旧版本镜像
-    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 2>/dev/null || true
+    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 opmp-server:1.0.2 opmp-server:1.0.3 2>/dev/null || true
 
     if docker compose version &> /dev/null; then
         if ! docker compose build --no-cache; then
