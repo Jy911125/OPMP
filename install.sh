@@ -374,13 +374,20 @@ build_images() {
     log_step "构建Docker镜像..."
     cd "$PROJECT_DIR"
 
+    # 清理旧的构建缓存（解决版本升级时的缓存问题）
+    log_info "清理Docker构建缓存..."
+    docker builder prune -f 2>/dev/null || true
+
+    # 移除旧版本镜像
+    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 2>/dev/null || true
+
     if docker compose version &> /dev/null; then
-        if ! docker compose build; then
+        if ! docker compose build --no-cache; then
             log_error "Docker镜像构建失败"
             exit 1
         fi
     else
-        if ! docker-compose build; then
+        if ! docker-compose build --no-cache; then
             log_error "Docker镜像构建失败"
             exit 1
         fi
