@@ -96,7 +96,7 @@ async function deleteJob(job: any) {
 function parseCron(expr: string): string {
   const parts = expr.split(' ');
   if (parts.length < 5) return expr;
-  const [min, hour, day, month, weekday] = parts;
+  const [min, hour, day, month, _weekday] = parts;
   if (min === '*' && hour === '*') return '每小时执行';
   if (min === '0' && hour === '*') return '每小时整点执行';
   if (min === '0' && hour !== '*') return `每天 ${hour}:00 执行`;
