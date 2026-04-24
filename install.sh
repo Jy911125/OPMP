@@ -223,17 +223,23 @@ prepare_project() {
 
         log_success "项目克隆完成 (版本: ${LATEST_TAG:-main})"
     else
-        log_info "复制本地项目文件..."
+        log_info "准备本地项目..."
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        mkdir -p "$PROJECT_DIR"
-        cp -r "$SCRIPT_DIR/server" "$PROJECT_DIR/"
-        cp -r "$SCRIPT_DIR/client" "$PROJECT_DIR/"
-        cp "$SCRIPT_DIR/docker-compose.yml" "$PROJECT_DIR/"
-        cp "$SCRIPT_DIR/install.sh" "$PROJECT_DIR/" 2>/dev/null || true
-        cp "$SCRIPT_DIR/uninstall.sh" "$PROJECT_DIR/" 2>/dev/null || true
-        cp "$SCRIPT_DIR/update.sh" "$PROJECT_DIR/" 2>/dev/null || true
-        cp "$SCRIPT_DIR/server/.env.example" "$PROJECT_DIR/server/" 2>/dev/null || true
-        log_success "项目文件复制完成"
+
+        # 如果脚本目录已经是目标目录，无需复制
+        if [[ "$SCRIPT_DIR" == "$PROJECT_DIR" ]]; then
+            log_success "项目文件已就位 (已在安装目录)"
+        else
+            mkdir -p "$PROJECT_DIR"
+            cp -r "$SCRIPT_DIR/server" "$PROJECT_DIR/"
+            cp -r "$SCRIPT_DIR/client" "$PROJECT_DIR/"
+            cp "$SCRIPT_DIR/docker-compose.yml" "$PROJECT_DIR/"
+            cp "$SCRIPT_DIR/install.sh" "$PROJECT_DIR/" 2>/dev/null || true
+            cp "$SCRIPT_DIR/uninstall.sh" "$PROJECT_DIR/" 2>/dev/null || true
+            cp "$SCRIPT_DIR/update.sh" "$PROJECT_DIR/" 2>/dev/null || true
+            cp "$SCRIPT_DIR/server/.env.example" "$PROJECT_DIR/server/" 2>/dev/null || true
+            log_success "项目文件复制完成"
+        fi
     fi
 }
 
