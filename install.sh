@@ -32,9 +32,71 @@ GITHUB_REPO="https://github.com/Jy911125/OPMP.git"
 # 安装模式
 INSTALL_MODE="clone"
 
+# 区域标识 (true=中国国内, false=国外)
+IS_CHINA=false
+
+# 镜像源配置
+NPM_REGISTRY_CN="https://registry.npmmirror.com"
+NPM_REGISTRY_DEFAULT="https://registry.npmjs.org"
+DOCKER_MIRRORS_CN='["https://docker.1ms.run", "https://docker.xuanyuan.me"]'
+DOCKER_MIRRORS_DEFAULT='[]'
+
 # 检测是否交互模式
 is_interactive() {
     [[ -t 0 && -t 1 ]]
+}
+
+# 检测是否在中国国内
+detect_region() {
+    log_info "检测网络区域..."
+
+    # 方法1: 检查时区
+    local timezone=""
+    if [[ -f /etc/timezone ]]; then
+        timezone=$(cat /etc/timezone 2>/dev/null)
+    elif [[ -L /etc/localtime ]]; then
+        timezone=$(readlink /etc/localtime 2>/dev/null | grep -oP '(?<=zoneinfo/)[^/]+$')
+    fi
+
+    if [[ "$timezone" =~ ^(Asia/Shanghai|Asia/Chongqing|Asia/Hong_Kong|Asia/Macau)$ ]]; then
+        IS_CHINA=true
+        log_info "检测到中国时区 ($timezone)"
+        return 0
+    fi
+
+    # 方法2: 尝试访问国内镜像检测延迟
+    local cn_latency=999999
+    local default_latency=999999
+
+    # 测试国内镜像延迟
+    if timeout 3 bash -c "echo > /dev/tcp/registry.npmmirror.com/443" 2>/dev/null; then
+        cn_latency=$( (time timeout 3 curl -s -o /dev/null https://registry.npmmirror.com 2>&1) 2>&1 | grep -oP 'real\s*0m\K[\d.]+' | awk '{print int($1*1000)}')
+        [[ -z "$cn_latency" ]] && cn_latency=500
+    fi
+
+    # 测试默认源延迟
+    if timeout 3 bash -c "echo > /dev/tcp/registry.npmjs.org/443" 2>/dev/null; then
+        default_latency=$( (time timeout 3 curl -s -o /dev/null https://registry.npmjs.org 2>&1) 2>&1 | grep -oP 'real\s*0m\K[\d.]+' | awk '{print int($1*1000)}')
+        [[ -z "$default_latency" ]] && default_latency=500
+    fi
+
+    # 如果国内镜像延迟明显更低，判定为国内
+    if [[ "$cn_latency" -lt "$default_latency" ]] && [[ "$cn_latency" -lt 1000 ]]; then
+        IS_CHINA=true
+        log_info "国内镜像延迟较低 (${cn_latency}ms < ${default_latency}ms)，判定为国内环境"
+    else
+        IS_CHINA=false
+        log_info "判定为国外环境 (国内: ${cn_latency}ms, 国外: ${default_latency}ms)"
+    fi
+}
+
+# 获取当前应使用的npm registry
+get_npm_registry() {
+    if [[ "$IS_CHINA" == true ]]; then
+        echo "$NPM_REGISTRY_CN"
+    else
+        echo "$NPM_REGISTRY_DEFAULT"
+    fi
 }
 
 # 错误处理
@@ -194,7 +256,9 @@ configure_docker_mirror() {
 
     mkdir -p /etc/docker
 
-    cat > /etc/docker/daemon.json << 'EOF'
+    if [[ "$IS_CHINA" == true ]]; then
+        # 国内镜像
+        cat > /etc/docker/daemon.json << 'EOF'
 {
     "registry-mirrors": [
         "https://docker.1ms.run",
@@ -207,11 +271,23 @@ configure_docker_mirror() {
     "storage-driver": "overlay2"
 }
 EOF
+        log_success "Docker国内镜像加速配置完成"
+    else
+        # 国外使用默认配置
+        cat > /etc/docker/daemon.json << 'EOF'
+{
+    "log-opts": {
+        "max-size": "10m",
+        "max-file": "3"
+    },
+    "storage-driver": "overlay2"
+}
+EOF
+        log_success "Docker配置完成 (使用默认源)"
+    fi
 
     systemctl daemon-reload
     systemctl restart docker
-
-    log_success "Docker镜像加速配置完成"
 }
 
 # 检查并安装Docker Compose
@@ -405,19 +481,32 @@ build_images() {
     docker builder prune -f 2>/dev/null || true
 
     # 移除旧版本镜像
-    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 opmp-server:1.0.2 opmp-server:1.0.3 opmp-server:1.0.4 2>/dev/null || true
+    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 opmp-server:1.0.2 opmp-server:1.0.3 opmp-server:1.0.4 opmp-server:1.0.5 2>/dev/null || true
+
+    # 获取npm registry
+    local npm_registry=$(get_npm_registry)
+    log_info "使用npm源: $npm_registry"
+
+    # 创建.env文件用于docker compose构建（如果不存在）
+    if [[ ! -f "$PROJECT_DIR/.env" ]]; then
+        echo "NPM_REGISTRY=$npm_registry" > "$PROJECT_DIR/.env.build"
+    fi
 
     if docker compose version &> /dev/null; then
-        if ! docker compose build --no-cache; then
+        if ! docker compose build --no-cache --build-arg NPM_REGISTRY="$npm_registry"; then
             log_error "Docker镜像构建失败"
             exit 1
         fi
     else
-        if ! docker-compose build --no-cache; then
+        if ! docker-compose build --no-cache --build-arg NPM_REGISTRY="$npm_registry"; then
             log_error "Docker镜像构建失败"
             exit 1
         fi
     fi
+
+    # 清理临时构建环境文件
+    rm -f "$PROJECT_DIR/.env.build" 2>/dev/null || true
+
     log_success "Docker镜像构建完成"
 }
 
@@ -564,6 +653,7 @@ main() {
     update_system
     check_system
     install_dependencies    # 先安装依赖（含git）
+    detect_region           # 检测网络区域（国内外）
     detect_install_mode     # 再检测模式
     install_docker
     install_docker_compose

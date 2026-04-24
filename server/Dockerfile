@@ -1,6 +1,9 @@
 # OPMP Server - Node.js Backend with Frontend
 # 多阶段构建: 前端构建 + 后端构建
 
+# 构建参数：npm registry (默认国内源，可通过--build-arg覆盖)
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+
 #===============================================
 # 阶段1: 构建前端
 #===============================================
@@ -9,10 +12,13 @@ FROM node:24-alpine AS frontend-builder
 LABEL maintainer="OPMP Team"
 LABEL stage="frontend-builder"
 
+# 接收构建参数
+ARG NPM_REGISTRY
+
 WORKDIR /app/client
 
-# 设置npm国内镜像
-RUN npm config set registry https://registry.npmmirror.com
+# 设置npm镜像
+RUN npm config set registry ${NPM_REGISTRY}
 
 # 复制前端依赖文件
 COPY client/package*.json ./
@@ -39,10 +45,13 @@ FROM node:24-alpine AS backend-builder
 LABEL maintainer="OPMP Team"
 LABEL stage="backend-builder"
 
+# 接收构建参数
+ARG NPM_REGISTRY
+
 WORKDIR /app
 
-# 设置npm国内镜像
-RUN npm config set registry https://registry.npmmirror.com
+# 设置npm镜像
+RUN npm config set registry ${NPM_REGISTRY}
 
 # 安装系统依赖
 RUN apk add --no-cache curl bash procps sudo
@@ -66,11 +75,11 @@ RUN npm run build
 FROM node:24-alpine
 
 LABEL maintainer="OPMP Team"
-LABEL version="1.0.5"
+LABEL version="1.0.6"
 LABEL description="OPMP Virtual Digital Monitoring Platform - Server"
 
-# 设置npm国内镜像
-RUN npm config set registry https://registry.npmmirror.com
+# 接收构建参数
+ARG NPM_REGISTRY
 
 # 安装系统依赖
 RUN apk add --no-cache curl bash procps sudo iproute2
@@ -81,7 +90,7 @@ WORKDIR /app
 # 复制package文件
 COPY server/package*.json ./
 
-# 只安装生产依赖
+# 只安装生产依赖（使用默认源，生产环境无需镜像加速）
 RUN npm install --only=production --prefer-offline --no-audit
 
 # 从构建阶段复制后端产物
