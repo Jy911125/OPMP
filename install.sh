@@ -405,7 +405,7 @@ build_images() {
     docker builder prune -f 2>/dev/null || true
 
     # 移除旧版本镜像
-    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 opmp-server:1.0.2 opmp-server:1.0.3 2>/dev/null || true
+    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 opmp-server:1.0.2 opmp-server:1.0.3 opmp-server:1.0.4 2>/dev/null || true
 
     if docker compose version &> /dev/null; then
         if ! docker compose build --no-cache; then

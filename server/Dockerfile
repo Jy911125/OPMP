@@ -66,7 +66,7 @@ RUN npm run build
 FROM node:24-alpine
 
 LABEL maintainer="OPMP Team"
-LABEL version="1.0.4"
+LABEL version="1.0.5"
 LABEL description="OPMP Virtual Digital Monitoring Platform - Server"
 
 # 设置npm国内镜像
