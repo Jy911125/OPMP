@@ -32,6 +32,19 @@ GITHUB_REPO="https://github.com/Jy911125/OPMP.git"
 # 安装模式
 INSTALL_MODE="clone"
 
+# 检测是否交互模式
+is_interactive() {
+    [[ -t 0 && -t 1 ]]
+}
+
+# 错误处理
+trap_error() {
+    local exit_code=$?
+    log_error "脚本在第 ${BASH_LINENO[0]} 行异常退出 (退出码: $exit_code)"
+    exit $exit_code
+}
+trap trap_error ERR
+
 # 日志函数
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
@@ -67,9 +80,14 @@ check_system() {
 
     if [[ "$ID" != "ubuntu" ]]; then
         log_warning "此脚本主要针对Ubuntu系统，当前系统: $ID"
-        read -p "是否继续安装? (y/n): " -n 1 -r
-        echo
-        [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
+        if is_interactive; then
+            read -p "是否继续安装? (y/n): " -n 1 -r
+            echo
+            [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
+        else
+            log_error "非Ubuntu系统，请在交互模式下运行以确认"
+            exit 1
+        fi
     fi
 
     log_success "系统检测通过: $PRETTY_NAME"
@@ -100,10 +118,21 @@ install_dependencies() {
 detect_install_mode() {
     log_info "检测安装模式..."
 
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR="/tmp"
+    # 首先检查目标目录是否已有完整项目
+    if [[ -f "$PROJECT_DIR/docker-compose.yml" ]] && \
+       [[ -d "$PROJECT_DIR/server" ]] && \
+       [[ -d "$PROJECT_DIR/client" ]]; then
+        INSTALL_MODE="existing"
+        log_info "检测到已安装项目 → 更新模式"
+        return 0
+    fi
+
+    # 尝试获取脚本目录（pipe模式下可能失败）
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
 
     # 检查是否在项目目录中执行（本地克隆后安装）
-    if [[ -f "$SCRIPT_DIR/docker-compose.yml" ]] && \
+    if [[ -n "$SCRIPT_DIR" ]] && \
+       [[ -f "$SCRIPT_DIR/docker-compose.yml" ]] && \
        [[ -d "$SCRIPT_DIR/server" ]] && \
        [[ -d "$SCRIPT_DIR/client" ]]; then
         INSTALL_MODE="local"
@@ -208,7 +237,29 @@ install_docker_compose() {
 prepare_project() {
     log_step "准备项目文件..."
 
-    if [[ "$INSTALL_MODE" == "clone" ]]; then
+    if [[ "$INSTALL_MODE" == "existing" ]]; then
+        log_info "项目已存在于 $PROJECT_DIR，跳过文件准备"
+        cd "$PROJECT_DIR"
+
+        # 尝试拉取最新版本
+        if [[ -d "$PROJECT_DIR/.git" ]]; then
+            log_info "检查更新..."
+            git fetch --tags 2>/dev/null || true
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git tag -l | sort -V | tail -1 || echo "")
+            if [[ -n "$LATEST_TAG" ]]; then
+                CURRENT_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")
+                if [[ "$CURRENT_TAG" != "$LATEST_TAG" ]]; then
+                    git checkout "$LATEST_TAG" 2>/dev/null || true
+                    log_info "已更新到版本: $LATEST_TAG"
+                else
+                    log_info "当前已是最新版本: $LATEST_TAG"
+                fi
+            fi
+        fi
+
+        log_success "项目文件已就位"
+
+    elif [[ "$INSTALL_MODE" == "clone" ]]; then
         log_info "从GitHub克隆项目: $GITHUB_REPO"
         rm -rf "$PROJECT_DIR"
         git clone "$GITHUB_REPO" "$PROJECT_DIR"
@@ -259,9 +310,14 @@ configure_environment() {
 
     if [[ -f "$ENV_FILE" ]]; then
         log_info "发现现有环境配置"
-        read -p "覆盖现有配置? (y/n，默认n): " -n 1 -r
-        echo
-        [[ ! $REPLY =~ ^[Yy]$ ]] && return 0
+        if is_interactive; then
+            read -p "覆盖现有配置? (y/n，默认n): " -n 1 -r
+            echo
+            [[ ! $REPLY =~ ^[Yy]$ ]] && return 0
+        else
+            log_info "非交互模式，保留现有配置"
+            return 0
+        fi
     fi
 
     JWT_SECRET=$(openssl rand -hex 32)
@@ -319,9 +375,15 @@ build_images() {
     cd "$PROJECT_DIR"
 
     if docker compose version &> /dev/null; then
-        docker compose build
+        if ! docker compose build; then
+            log_error "Docker镜像构建失败"
+            exit 1
+        fi
     else
-        docker-compose build
+        if ! docker-compose build; then
+            log_error "Docker镜像构建失败"
+            exit 1
+        fi
     fi
     log_success "Docker镜像构建完成"
 }
@@ -333,21 +395,34 @@ start_services() {
 
     if docker compose version &> /dev/null; then
         docker compose down --remove-orphans 2>/dev/null || true
-        docker compose up -d
+        if ! docker compose up -d; then
+            log_error "Docker Compose 启动失败"
+            exit 1
+        fi
     else
         docker-compose down --remove-orphans 2>/dev/null || true
-        docker-compose up -d
+        if ! docker-compose up -d; then
+            log_error "Docker Compose 启动失败"
+            exit 1
+        fi
     fi
 
     log_info "等待服务启动..."
-    sleep 15
+    local retry=0
+    local max_retry=30
+    while [[ $retry -lt $max_retry ]]; do
+        if docker ps | grep -q "opmp"; then
+            break
+        fi
+        sleep 2
+        retry=$((retry + 1))
+    done
 
     if docker ps | grep -q "opmp"; then
         log_success "OPMP服务启动成功"
     else
-        log_error "OPMP服务启动失败"
-        docker logs opmp-server 2>&1 | tail -30
-        docker logs opmp-client 2>&1 | tail -30
+        log_error "OPMP服务启动失败 (等待 ${max_retry} 次重试后仍无容器运行)"
+        docker compose logs --tail=30 2>/dev/null || docker-compose logs --tail=30 2>/dev/null
         exit 1
     fi
 }
