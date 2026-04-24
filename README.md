@@ -62,10 +62,11 @@ curl -fsSL https://raw.githubusercontent.com/Jy911125/OPMP/main/install.sh | sud
 - 安装 git、curl 等基础依赖
 - 安装 Docker & Docker Compose
 - 从 GitHub 克隆项目
-- 构建Docker镜像
+- 构建Docker镜像（前端+后端一体化）
 - 生成JWT密钥、配置环境变量
+- 自动检测局域网IP并绑定
 - 启动服务 & 创建开机自启
-- 配置防火墙
+- 配置防火墙（仅允许局域网访问）
 
 ### 方式二：克隆后安装
 
@@ -76,8 +77,9 @@ cd OPMP && sudo bash install.sh
 
 ### 安装完成后访问
 
-- **Web界面**: http://服务器IP:8080
-- **API接口**: http://服务器IP:3000
+- **Web界面 + API**: http://局域网IP:3000
+- 默认只允许局域网 (192.168.0.0/16) 访问
+- 如需开放外网，请自行配置反向代理和防火墙
 
 ---
 
@@ -103,12 +105,6 @@ cd /opt/opmp && docker compose ps
 
 # 查看实时日志
 cd /opt/opmp && docker compose logs -f
-
-# 只看后端日志
-docker logs -f opmp-server
-
-# 只看前端日志
-docker logs -f opmp-client
 
 # 重启服务
 systemctl restart opmp
@@ -151,13 +147,13 @@ cd OPMP && sudo bash uninstall.sh
 OPMP/
 ├── install.sh                 # 一键安装脚本
 ├── uninstall.sh               # 一键卸载脚本
+├── update.sh                  # 一键更新脚本
 ├── docker-compose.yml         # Docker编排配置
 ├── server/                    # 后端 (Node.js + Express + TypeScript)
-│   ├── Dockerfile
+│   ├── Dockerfile             # 多阶段构建 (前端+后端一体化)
 │   ├── .env                   # 环境变量
-│   ├── .env.example           # 环境变量示例
 │   └── src/
-│       ├── app.ts             # 应用入口
+│       ├── app.ts             # 应用入口 (API + 静态文件托管)
 │       ├── config/            # 配置 & 命令白名单
 │       ├── routes/            # API路由
 │       ├── services/          # 业务逻辑
@@ -166,8 +162,6 @@ OPMP/
 │       ├── utils/             # 命令执行器/输出解析器
 │       └── websocket/         # WebSocket实时推送
 ├── client/                    # 前端 (Vue 3 + Vite + TypeScript)
-│   ├── Dockerfile
-│   ├── nginx.conf             # Nginx配置
 │   └── src/
 │       ├── views/             # 页面组件
 │       │   ├── system/        #   系统管理页面 (9个)
@@ -176,7 +170,8 @@ OPMP/
 │       ├── api/               # Axios API封装
 │       ├── router/            # Vue Router路由
 │       └── assets/            # 样式资源
-└── README.md                      # 项目说明
+├── CONTRIBUTING.md            # 贡献指南
+└── README.md                  # 项目说明
 ```
 
 ---
@@ -188,6 +183,7 @@ OPMP/
 3. **RBAC权限** - admin/operator/viewer三级权限控制
 4. **审计日志** - 所有写操作记录审计日志
 5. **限流保护** - API级别限流，防止暴力攻击
+6. **局域网绑定** - 默认只允许局域网(192.168.0.0/16)访问
 
 ---
 
@@ -201,7 +197,7 @@ OPMP/
 | 实时通信 | Socket.IO (WebSocket) |
 | Docker API | Dockerode |
 | 容器化 | Docker + Docker Compose |
-| Web服务器 | Nginx (生产) |
+| 基础镜像 | node:24-alpine |
 
 ---
 
