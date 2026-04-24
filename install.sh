@@ -480,8 +480,10 @@ build_images() {
     log_info "清理Docker构建缓存..."
     docker builder prune -f 2>/dev/null || true
 
-    # 移除旧版本镜像
-    docker rmi opmp-server:1.0.0 opmp-server:1.0.1 opmp-server:1.0.2 opmp-server:1.0.3 opmp-server:1.0.4 opmp-server:1.0.5 2>/dev/null || true
+    # 移除所有旧版本opmp镜像（不再硬编码版本号）
+    docker images opmp-server --format '{{.Repository}}:{{.Tag}}' | while read -r img; do
+        docker rmi "$img" 2>/dev/null || true
+    done
 
     # 获取npm registry
     local npm_registry=$(get_npm_registry)

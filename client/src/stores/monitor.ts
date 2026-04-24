@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 
 export interface MonitorSnapshot {
   timestamp: number;
-  cpu: { usage: number; loadAvg: [number, number, number]; uptime: number };
+  cpu: { usage: number; loadAvg: [number, number, number]; uptime: number; cores?: { model: string }[] };
   memory: { total: number; used: number; available: number; usagePercent: number; swapUsed: number; swapTotal: number };
   disks: { filesystem: string; mountPoint: string; total: number; used: number; usagePercent: number }[];
   network: { interfaceName: string; rxBytesPerSec: number; txBytesPerSec: number }[];
