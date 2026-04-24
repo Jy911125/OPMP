@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
-    image: opmp-server:1.0.3
+    image: opmp-server:1.0.4
     container_name: opmp-server
     restart: unless-stopped
     ports:
