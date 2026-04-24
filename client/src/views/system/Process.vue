@@ -50,7 +50,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 const processes = ref<any[]>([]);
 const loading = ref(false);
 const filter = ref('');
-let timer: NodeJS.Timeout | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
 
 const filteredProcesses = computed(() => {
   if (!filter.value) return processes.value;
