@@ -20,8 +20,6 @@ services:
       - /etc:/host/etc:ro
       # 日志持久化
       - opmp-logs:/var/log/opmp
-      # 共享node_modules (加速后续构建)
-      - node-modules-cache:/app/node_modules
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -56,7 +54,3 @@ volumes:
   opmp-logs:
     driver: local
     name: opmp-logs
-  # Node模块共享缓存 (多个Node项目可复用)
-  node-modules-cache:
-    driver: local
-    name: node-modules-cache
