@@ -1,5 +1,68 @@
-# OPMP Server - Node.js Backend
-# 使用阿里云镜像加速
+# OPMP Server - Node.js Backend with Frontend
+# 多阶段构建: 前端构建 + 后端构建
+
+#===============================================
+# 阶段1: 构建前端
+#===============================================
+FROM node:24-alpine AS frontend-builder
+
+LABEL maintainer="OPMP Team"
+LABEL stage="frontend-builder"
+
+WORKDIR /app/client
+
+# 设置npm国内镜像
+RUN npm config set registry https://registry.npmmirror.com
+
+# 复制前端依赖文件
+COPY client/package*.json ./
+COPY client/tsconfig.json ./
+COPY client/tsconfig.node.json ./
+COPY client/vite.config.ts ./
+
+# 安装前端依赖
+RUN npm ci
+
+# 复制前端源代码
+COPY client/src ./src
+COPY client/public ./public
+COPY client/index.html ./
+
+# 构建前端
+RUN npm run build
+
+#===============================================
+# 阶段2: 构建后端
+#===============================================
+FROM node:24-alpine AS backend-builder
+
+LABEL maintainer="OPMP Team"
+LABEL stage="backend-builder"
+
+WORKDIR /app
+
+# 设置npm国内镜像
+RUN npm config set registry https://registry.npmmirror.com
+
+# 安装系统依赖
+RUN apk add --no-cache curl bash procps sudo
+
+# 复制后端依赖文件
+COPY server/package*.json ./
+COPY server/tsconfig.json ./
+
+# 安装所有依赖（包括devDependencies用于构建）
+RUN npm ci
+
+# 复制后端源代码
+COPY server/src ./src
+
+# 构建TypeScript
+RUN npm run build
+
+#===============================================
+# 阶段3: 生产镜像
+#===============================================
 FROM node:24-alpine
 
 LABEL maintainer="OPMP Team"
@@ -10,27 +73,22 @@ LABEL description="OPMP Virtual Digital Monitoring Platform - Server"
 RUN npm config set registry https://registry.npmmirror.com
 
 # 安装系统依赖
-RUN apk add --no-cache \
-    curl \
-    bash \
-    procps \
-    sudo
+RUN apk add --no-cache curl bash procps sudo iproute2
 
 # 创建应用目录
 WORKDIR /app
 
-# 复制package文件（利用Docker缓存）
-COPY package*.json ./
-COPY tsconfig.json ./
+# 复制package文件
+COPY server/package*.json ./
 
-# 安装依赖
+# 只安装生产依赖
 RUN npm ci --only=production
 
-# 复制源代码
-COPY src ./src
+# 从构建阶段复制后端产物
+COPY --from=backend-builder /app/dist ./dist
 
-# 构建TypeScript
-RUN npm run build
+# 从构建阶段复制前端产物
+COPY --from=frontend-builder /app/client/dist ./public
 
 # 创建日志目录
 RUN mkdir -p /var/log/opmp && chmod 777 /var/log/opmp
@@ -41,6 +99,7 @@ RUN addgroup -S opmp && adduser -S opmp -G opmp
 # 环境变量
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOST=0.0.0.0
 
 # 暴露端口
 EXPOSE 3000

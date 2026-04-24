@@ -238,9 +238,10 @@ remove_firewall_rules() {
     log_step "删除防火墙规则..."
 
     if command -v ufw &> /dev/null; then
-        # 通过规则编号删除
-        ufw delete allow 8080/tcp 2>/dev/null || true
-        ufw delete allow 3000/tcp 2>/dev/null || true
+        # 删除局域网访问规则
+        ufw delete allow from 192.168.0.0/16 to any port 3000 proto tcp 2>/dev/null || true
+        ufw delete allow from 10.0.0.0/8 to any port 3000 proto tcp 2>/dev/null || true
+        ufw delete allow from 172.16.0.0/12 to any port 3000 proto tcp 2>/dev/null || true
 
         if ufw status | grep -q "active"; then
             ufw reload 2>/dev/null || true

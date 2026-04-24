@@ -262,6 +262,19 @@ configure_environment() {
     SERVER_IP=$(hostname -I | awk '{print $1}')
     [[ -z "$SERVER_IP" ]] && SERVER_IP="localhost"
 
+    # 检测局域网IP (192.168.0.0/16)
+    LAN_IP=$(ip -4 addr show | grep -oP '192\.168\.\d+\.\d+' | head -1)
+    if [[ -z "$LAN_IP" ]]; then
+        # 未检测到192.168.x.x网段，尝试10.x.x.x或172.16-31.x.x
+        LAN_IP=$(ip -4 addr show | grep -oP '(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)' | head -1)
+    fi
+    if [[ -z "$LAN_IP" ]]; then
+        LAN_IP="0.0.0.0"
+        log_warning "未检测到局域网IP，默认绑定所有接口"
+    else
+        log_info "检测到局域网IP: $LAN_IP"
+    fi
+
     cat > "$ENV_FILE" << EOF
 # OPMP 环境配置 - $(date '+%Y-%m-%d %H:%M:%S')
 
@@ -269,11 +282,14 @@ NODE_ENV=production
 PORT=3000
 HOST=0.0.0.0
 
+# 局域网绑定 (默认192.168.0.0/16)
+LAN_IP=${LAN_IP}
+
 JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRES_IN=24h
 JWT_REFRESH_EXPIRES_IN=7d
 
-CORS_ORIGIN=http://${SERVER_IP}:8080
+CORS_ORIGIN=http://${SERVER_IP}:3000
 
 DOCKER_SOCKET=/var/run/docker.sock
 PROC_PATH=/host/proc
@@ -288,7 +304,7 @@ RATE_LIMIT_MAX=100
 EOF
 
     chmod 600 "$ENV_FILE"
-    log_success "环境变量配置完成 (JWT密钥已自动生成)"
+    log_success "环境变量配置完成 (局域网绑定: ${LAN_IP})"
 }
 
 # 构建Docker镜像
@@ -360,15 +376,19 @@ EOF
     log_success "系统服务创建完成"
 }
 
-# 配置防火墙
+# 配置防火墙 (只允许局域网访问)
 configure_firewall() {
     log_step "配置防火墙..."
 
     if command -v ufw &> /dev/null; then
-        ufw allow 8080/tcp comment 'OPMP Web UI' 2>/dev/null || true
-        ufw allow 3000/tcp comment 'OPMP API' 2>/dev/null || true
+        # 只允许192.168.0.0/16局域网访问
+        ufw allow from 192.168.0.0/16 to any port 3000 proto tcp comment 'OPMP LAN' 2>/dev/null || true
+        # 也允许10.0.0.0/8私有网段
+        ufw allow from 10.0.0.0/8 to any port 3000 proto tcp comment 'OPMP LAN 10.x' 2>/dev/null || true
+        # 也允许172.16.0.0/12私有网段
+        ufw allow from 172.16.0.0/12 to any port 3000 proto tcp comment 'OPMP LAN 172.x' 2>/dev/null || true
         ufw status | grep -q "active" && ufw reload 2>/dev/null || true
-        log_success "防火墙规则已配置"
+        log_success "防火墙规则已配置 (仅局域网访问)"
     else
         log_info "UFW未安装，跳过防火墙配置"
     fi
@@ -378,6 +398,11 @@ configure_firewall() {
 show_info() {
     SERVER_IP=$(hostname -I | awk '{print $1}')
     [[ -z "$SERVER_IP" ]] && SERVER_IP="localhost"
+
+    # 尝试获取局域网IP
+    LAN_IP_DISPLAY=$(ip -4 addr show | grep -oP '192\.168\.\d+\.\d+' | head -1)
+    [[ -z "$LAN_IP_DISPLAY" ]] && LAN_IP_DISPLAY=$(ip -4 addr show | grep -oP '(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)' | head -1)
+    [[ -z "$LAN_IP_DISPLAY" ]] && LAN_IP_DISPLAY="$SERVER_IP"
 
     echo ""
     echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
@@ -389,9 +414,8 @@ show_info() {
     echo -e "${CYAN}📁 安装目录:${NC} $PROJECT_DIR"
     echo -e "${CYAN}📋 配置文件:${NC} $PROJECT_DIR/.env"
     echo ""
-    echo -e "${CYAN}🌐 访问地址:${NC}"
-    echo "   Web UI:  http://${SERVER_IP}:8080"
-    echo "   API:     http://${SERVER_IP}:3000"
+    echo -e "${CYAN}🌐 访问地址 (局域网):${NC}"
+    echo "   http://${LAN_IP_DISPLAY}:3000"
     echo ""
     echo -e "${CYAN}👤 默认账号:${NC}"
     echo "   admin / opmp@2026 (管理员)"
@@ -406,6 +430,7 @@ show_info() {
     echo "   卸载:     sudo bash $PROJECT_DIR/uninstall.sh"
     echo ""
     echo -e "${YELLOW}⚠️  生产环境请修改默认密码和JWT_SECRET!${NC}"
+    echo -e "${YELLOW}⚠️  默认只允许局域网(192.168.0.0/16)访问${NC}"
     echo ""
 }
 
