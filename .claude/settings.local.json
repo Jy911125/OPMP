@@ -19,7 +19,9 @@
       "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --base develop --title 'fix: 修复install.sh在安装目录执行时因cp同文件报错导致退出' --body ' *)",
       "Bash(git branch *)",
       "Bash(gh api *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(sed -i 's/LABEL version=\"1.0.9\"/LABEL version=\"1.1.0\"/' server/Dockerfile)",
+      "Bash(sed -i 's/image: opmp-server:1.0.9/image: opmp-server:1.1.0/' docker-compose.yml)"
     ]
   }
 }

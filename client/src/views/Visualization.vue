@@ -206,7 +206,7 @@ function buildNetworkView() {
   objects.push(particles);
 }
 
-function createGauge(label: string, value: number, x: number, y: number, z: number): THREE.Group {
+function createGauge(_label: string, value: number, x: number, y: number, z: number): THREE.Group {
   const group = new THREE.Group();
 
   const geometry = new THREE.CylinderGeometry(1, 1, 0.2, 32);
