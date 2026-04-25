@@ -1,13 +1,12 @@
 import * as fs from 'fs/promises';
-import { CommandExecutor } from '../utils/executor.js';
-import { OutputParser } from '../utils/parser.js';
-import { validateCommandArgs } from '../config/whitelist.js';
-import type { ProcessInfo } from '../types/system.js';
+import { CommandExecutor } from '../../utils/executor';
+import { validateCommandArgs } from '../../config/whitelist';
+import type { ProcessInfo } from '../../types/system';
 
 export class ProcessService {
   async getProcessList(): Promise<ProcessInfo[]> {
     const result = await CommandExecutor.execute('ps', ['auxwww']);
-    const lines = result.stdout.split('\n').filter(l => l.trim()).slice(1);
+    const lines = result.stdout.split('\n').filter((l: string) => l.trim()).slice(1);
     const processes: ProcessInfo[] = [];
 
     for (const line of lines) {
@@ -36,7 +35,7 @@ export class ProcessService {
   async getProcessByPid(pid: number): Promise<ProcessInfo | null> {
     const result = await CommandExecutor.execute('ps', ['-p', String(pid), '-o', 'pid,ppid,user,%cpu,%mem,vsz,rss,stat,start,cmd']);
 
-    const lines = result.stdout.split('\n').filter(l => l.trim());
+    const lines = result.stdout.split('\n').filter((l: string) => l.trim());
     if (lines.length < 2) return null;
 
     const parts = lines[1].trim().split(/\s+/);
@@ -70,7 +69,7 @@ export class ProcessService {
   async getProcessChildren(pid: number): Promise<ProcessInfo[]> {
     const result = await CommandExecutor.execute('ps', ['--ppid', String(pid), '-o', 'pid,ppid,user,%cpu,%mem,cmd']);
 
-    const lines = result.stdout.split('\n').filter(l => l.trim()).slice(1);
+    const lines = result.stdout.split('\n').filter((l: string) => l.trim()).slice(1);
     const children: ProcessInfo[] = [];
 
     for (const line of lines) {

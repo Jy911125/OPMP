@@ -18,35 +18,42 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     allowedArgs: ['-l', '-a', '-h', '-R', '-la', '-lah', '-lha'],
     allowPathArg: true,
     maxPathLength: 4096,
+    allowSudo: false,
   },
   stat: {
     command: 'stat',
     allowedArgs: ['-c', '%a %U %G %s %Y %n'],
     allowPathArg: true,
     maxPathLength: 4096,
+    allowSudo: false,
   },
   cat: {
     command: 'cat',
     allowedArgs: [],
     allowPathArg: true,
     maxPathLength: 4096,
+    allowSudo: false,
   },
   find: {
     command: 'find',
     allowedArgs: ['-name', '-type', '-size', '-mtime', '-maxdepth'],
     allowPathArg: true,
     maxPathLength: 4096,
+    allowSudo: false,
   },
   df: {
     command: 'df',
     allowedArgs: ['-h', '-B', '--output'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   du: {
     command: 'du',
     allowedArgs: ['-h', '-s', '-d', '-a'],
     allowPathArg: true,
     maxPathLength: 4096,
+    allowSudo: false,
   },
   mkdir: {
     command: 'mkdir',
@@ -104,11 +111,15 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     command: 'ps',
     allowedArgs: ['aux', 'auxwww', '-ef', '-eo'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   top: {
     command: 'top',
     allowedArgs: ['-bn1', '-bn2'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   kill: {
     command: 'kill',
@@ -124,12 +135,15 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     command: 'whoami',
     allowedArgs: [],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   id: {
     command: 'id',
     allowedArgs: [],
     allowPathArg: true,
     maxPathLength: 64,
+    allowSudo: false,
   },
   useradd: {
     command: 'useradd',
@@ -179,11 +193,15 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     command: 'ip',
     allowedArgs: ['addr', 'addr show', 'route', 'route show', 'link', 'link show', 'neigh'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   ss: {
     command: 'ss',
     allowedArgs: ['-tulnp', '-tuln', '-tlnp', '-ulnp'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   ufw: {
     command: 'ufw',
@@ -209,6 +227,7 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
       '--output', '-b', '-k', '--disk-usage'],
     allowPathArg: true,
     maxPathLength: 256,
+    allowSudo: false,
   },
 
   // Package management
@@ -225,6 +244,7 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     allowedArgs: ['-l', '-s', '-L', '-S'],
     allowPathArg: true,
     maxPathLength: 256,
+    allowSudo: false,
   },
 
   // Cron
@@ -232,6 +252,7 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     command: 'crontab',
     allowedArgs: ['-l', '-e', '-r'],
     allowPathArg: false,
+    maxPathLength: 0,
     allowSudo: true,
   },
 
@@ -240,36 +261,50 @@ export const COMMAND_WHITELIST: Record<string, WhitelistedCommand> = {
     command: 'uname',
     allowedArgs: ['-a', '-r', '-m', '-s'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   uptime: {
     command: 'uptime',
     allowedArgs: ['-p', '-s'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   hostname: {
     command: 'hostname',
     allowedArgs: ['-f', '-I', '-d'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   free: {
     command: 'free',
     allowedArgs: ['-h', '-b', '-k', '-m', '-g'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   lscpu: {
     command: 'lscpu',
     allowedArgs: [],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   date: {
     command: 'date',
     allowedArgs: ['+%Y-%m-%d %H:%M:%S', '+%Z', '+%s'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
   timedatectl: {
     command: 'timedatectl',
     allowedArgs: ['status'],
     allowPathArg: false,
+    maxPathLength: 0,
+    allowSudo: false,
   },
 };
 

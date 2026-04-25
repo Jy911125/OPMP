@@ -1,12 +1,12 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
-import { CommandExecutor } from '../utils/executor.js';
-import { OutputParser } from '../utils/parser.js';
-import { config } from '../config/index.js';
+import { CommandExecutor } from '../../utils/executor';
+import { OutputParser } from '../../utils/parser';
+import { config } from '../../config/index';
 import type {
   CpuInfo, CoreInfo, MemoryInfo, DiskInfo,
   NetworkTraffic, SystemInfo, MonitorSnapshot
-} from '../types/system.js';
+} from '../../types/system';
 
 export class MonitorService {
   private history: MonitorSnapshot[] = [];
@@ -83,7 +83,7 @@ export class MonitorService {
 
   async getDiskInfo(): Promise<DiskInfo[]> {
     const result = await CommandExecutor.execute('df -B1 --output=source,target,size,used,avail,pcent,type | grep -v tmpfs');
-    const lines = result.stdout.split('\n').filter(l => l.trim()).slice(1);
+    const lines = result.stdout.split('\n').filter((l: string) => l.trim()).slice(1);
     const disks: DiskInfo[] = [];
 
     for (const line of lines) {
@@ -112,7 +112,8 @@ export class MonitorService {
 
     const interval = this.prevTime > 0 ? (now - this.prevTime) / 1000 : 1;
 
-    for (const [name, data] of Object.entries(parsed)) {
+    type NetDevData = { rxBytes: number; txBytes: number; rxPackets: number; txPackets: number };
+    for (const [name, data] of Object.entries(parsed) as [string, NetDevData][]) {
       let rxSpeed = 0;
       let txSpeed = 0;
       let rxPps = 0;

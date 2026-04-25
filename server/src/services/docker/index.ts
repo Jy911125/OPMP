@@ -2,30 +2,84 @@ import Docker from 'dockerode';
 import type {
   ContainerInfo, ContainerCreateOptions, ContainerStats,
   ImageInfo, VolumeInfo, DockerNetworkInfo, DockerInfo, DockerDiskUsage
-} from '../types/docker.js';
-import type { PortMapping, MountInfo } from '../types/docker.js';
+} from '../../types/docker';
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+
+interface ContainerInspectInfo {
+  Id: string;
+  Name: string;
+  Config: { Image: string; Labels?: Record<string, string> };
+  State: { Status: string; Running: boolean };
+  Created: number;
+  NetworkSettings: {
+    Ports?: Record<string, Array<{ HostIp: string; HostPort: string }> | null>;
+    Networks?: Record<string, unknown>;
+  };
+  Mounts: Array<{
+    Type: string;
+    Source: string;
+    Destination: string;
+    Mode: string;
+    RW: boolean;
+  }>;
+}
+
+interface NetworkInspectInfo {
+  Id: string;
+  Name: string;
+  Driver: string;
+  Scope: string;
+  IPAM?: { Config?: Array<{ Subnet?: string; Gateway?: string }> };
+  Containers?: Record<string, { Name: string; IPv4Address: string; IPv6Address: string }>;
+  Labels?: Record<string, string>;
+}
+
+interface SystemInfoResult {
+  Containers?: number;
+  ContainersRunning?: number;
+  ContainersStopped?: number;
+  Images?: number;
+  StorageDriver?: string;
+  OperatingSystem?: string;
+  Aarch?: string;
+  NCPU?: number;
+  MemTotal?: number;
+  DockerRootDir?: string;
+  KernelVersion?: string;
+}
+
+interface SystemDfResult {
+  Images?: number;
+  ImagesSize?: number;
+  Containers?: number;
+  ContainersSize?: number;
+  Volumes?: number;
+  VolumesSize?: number;
+  BuildCache?: number;
+  BuildCacheSize?: number;
+  BuildCacheReclaimed?: number;
+}
 
 export class DockerContainerService {
   async listContainers(all: boolean = false): Promise<ContainerInfo[]> {
     const containers = await docker.listContainers({ all });
 
-    return containers.map(c => ({
+    return containers.map((c: Docker.ContainerInfo) => ({
       id: c.Id,
       name: c.Names[0]?.replace(/^\//, '') || '',
       image: c.Image,
       state: c.State,
       status: c.Status,
       created: c.Created * 1000,
-      ports: c.Ports.map(p => ({
+      ports: c.Ports.map((p: { IP?: string; PrivatePort?: number; PublicPort?: number; Type?: string }) => ({
         ip: p.IP || '',
         privatePort: p.PrivatePort || 0,
         publicPort: p.PublicPort || 0,
         type: p.Type || '',
       })),
       networks: Object.keys(c.NetworkSettings?.Networks || {}),
-      mounts: c.Mounts.map(m => ({
+      mounts: c.Mounts.map((m: { Type?: string; Source?: string; Destination?: string; Mode?: string; RW?: boolean }) => ({
         type: m.Type || '',
         source: m.Source || '',
         destination: m.Destination || '',
@@ -39,7 +93,7 @@ export class DockerContainerService {
   async getContainer(id: string): Promise<ContainerInfo | null> {
     try {
       const container = docker.getContainer(id);
-      const info = await container.inspect();
+      const info = await container.inspect() as unknown as ContainerInspectInfo;
 
       return {
         id: info.Id,
@@ -75,50 +129,53 @@ export class DockerContainerService {
   }
 
   async createContainer(options: ContainerCreateOptions): Promise<string> {
-    const createOpts: any = {
+    const createOpts: Record<string, unknown> = {
       name: options.name,
       Image: options.image,
       Cmd: options.cmd,
       Env: options.env,
       Tty: options.tty,
       OpenStdin: options.interactive,
-      HostConfig: {},
+      HostConfig: {} as Record<string, unknown>,
     };
 
     if (options.ports) {
-      createOpts.HostConfig.PortBindings = {};
+      const hostConfig = createOpts.HostConfig as Record<string, unknown>;
+      hostConfig.PortBindings = {};
       createOpts.ExposedPorts = {};
-      for (const [containerPort, hostConfig] of Object.entries(options.ports)) {
-        createOpts.ExposedPorts[containerPort] = {};
-        createOpts.HostConfig.PortBindings[containerPort] = [{
-          HostPort: hostConfig.HostPort,
-          HostIp: hostConfig.HostIp || '0.0.0.0',
+      type PortConfig = { HostPort: string; HostIp?: string };
+      for (const [containerPort, hostConfigEntry] of Object.entries(options.ports) as [string, PortConfig][]) {
+        (createOpts.ExposedPorts as Record<string, unknown>)[containerPort] = {};
+        (hostConfig.PortBindings as Record<string, unknown>)[containerPort] = [{
+          HostPort: hostConfigEntry.HostPort,
+          HostIp: hostConfigEntry.HostIp || '0.0.0.0',
         }];
       }
     }
 
     if (options.volumes) {
-      createOpts.HostConfig.Binds = Object.entries(options.volumes)
+      const hostConfig = createOpts.HostConfig as Record<string, unknown>;
+      hostConfig.Binds = Object.entries(options.volumes)
         .map(([vol, dst]) => `${vol}:${dst}`);
     }
 
     if (options.network) {
-      createOpts.HostConfig.NetworkMode = options.network;
+      (createOpts.HostConfig as Record<string, unknown>).NetworkMode = options.network;
     }
 
     if (options.restartPolicy) {
-      createOpts.HostConfig.RestartPolicy = { Name: options.restartPolicy };
+      (createOpts.HostConfig as Record<string, unknown>).RestartPolicy = { Name: options.restartPolicy };
     }
 
     if (options.memory) {
-      createOpts.HostConfig.Memory = options.memory;
+      (createOpts.HostConfig as Record<string, unknown>).Memory = options.memory;
     }
 
     if (options.privileged) {
-      createOpts.HostConfig.Privileged = true;
+      (createOpts.HostConfig as Record<string, unknown>).Privileged = true;
     }
 
-    const container = await docker.createContainer(createOpts);
+    const container = await docker.createContainer(createOpts as Docker.ContainerCreateOptions);
     return container.id;
   }
 
@@ -158,9 +215,9 @@ export class DockerContainerService {
       stdout: true,
       stderr: true,
       tail,
-      follow,
+      follow: follow as true,
       timestamps: true,
-    });
+    }) as unknown as NodeJS.ReadableStream;
   }
 
   async getContainerStats(id: string): Promise<ContainerStats> {
@@ -177,7 +234,7 @@ export class DockerContainerService {
     let networkRxBytes = 0;
     let networkTxBytes = 0;
     if (stats.networks) {
-      for (const network of Object.values(stats.networks)) {
+      for (const network of Object.values(stats.networks) as Array<{ rx_bytes?: number; tx_bytes?: number }>) {
         networkRxBytes += network.rx_bytes || 0;
         networkTxBytes += network.tx_bytes || 0;
       }
@@ -207,7 +264,7 @@ export class DockerContainerService {
 
   statsStream(id: string): NodeJS.ReadableStream {
     const container = docker.getContainer(id);
-    return container.stats({ stream: true });
+    return container.stats({ stream: true }) as unknown as NodeJS.ReadableStream;
   }
 
   async execInContainer(id: string, cmd: string[], interactive: boolean = true) {
@@ -228,24 +285,24 @@ export class DockerImageService {
   async listImages(): Promise<ImageInfo[]> {
     const images = await docker.listImages({ all: false });
 
-    return images.map(img => ({
+    return images.map((img: Docker.ImageInfo) => ({
       id: img.Id,
       repoTags: img.RepoTags || ['<none>'],
       repoDigests: img.RepoDigests || [],
       created: img.Created * 1000,
       size: img.Size,
       labels: img.Labels || {},
-      architecture: img.Architecture || 'unknown',
-      os: img.Os || 'unknown',
+      architecture: (img as any).Architecture || 'unknown',
+      os: (img as any).Os || 'unknown',
     }));
   }
 
   async pullImage(name: string, onProgress?: (event: any) => void): Promise<void> {
     return new Promise((resolve, reject) => {
-      docker.pull(name, (err: any, stream: NodeJS.ReadableStream) => {
+      docker.pull(name, (err: Error | null, stream: NodeJS.ReadableStream) => {
         if (err) return reject(err);
 
-        docker.modem.followProgress(stream, (err) => {
+        docker.modem.followProgress(stream, (err: Error | null) => {
           if (err) reject(err);
           else resolve();
         }, onProgress);
@@ -266,7 +323,7 @@ export class DockerImageService {
       id: info.Id,
       repoTags: info.RepoTags || ['<none>'],
       repoDigests: info.RepoDigests || [],
-      created: info.Created,
+      created: new Date(info.Created).getTime(),
       size: info.Size,
       labels: info.Config?.Labels || {},
       architecture: info.Architecture,
@@ -274,11 +331,8 @@ export class DockerImageService {
     };
   }
 
-  async buildImage(dockerfile: string, tag: string, context?: string): Promise<NodeJS.ReadableStream> {
-    return docker.buildImage(dockerfile, {
-      t: tag,
-      context,
-    });
+  async buildImage(dockerfile: string, tag: string): Promise<NodeJS.ReadableStream> {
+    return docker.buildImage(dockerfile, { t: tag } as Docker.ImageBuildOptions) as unknown as NodeJS.ReadableStream;
   }
 }
 
@@ -286,7 +340,7 @@ export class DockerVolumeService {
   async listVolumes(): Promise<VolumeInfo[]> {
     const result = await docker.listVolumes();
 
-    return result.Volumes.map(v => ({
+    return (result.Volumes || []).map((v: any) => ({
       name: v.Name,
       driver: v.Driver,
       mountPoint: v.Mountpoint,
@@ -302,7 +356,7 @@ export class DockerVolumeService {
       Name: name,
       Driver: driver,
     });
-    return volume.name;
+    return volume.Name || '';
   }
 
   async removeVolume(name: string): Promise<void> {
@@ -323,7 +377,7 @@ export class DockerNetworkService {
   async listNetworks(): Promise<DockerNetworkInfo[]> {
     const networks = await docker.listNetworks();
 
-    return networks.map(net => ({
+    return networks.map((net: NetworkInspectInfo) => ({
       id: net.Id,
       name: net.Name,
       driver: net.Driver,
@@ -333,13 +387,13 @@ export class DockerNetworkService {
       containers: Object.entries(net.Containers || {}).reduce((acc, [id, info]) => {
         acc[id] = { name: info.Name, ipv4: info.IPv4Address, ipv6: info.IPv6Address };
         return acc;
-      }, {} as any),
+      }, {} as Record<string, { name: string; ipv4: string; ipv6: string }>),
       labels: net.Labels || {},
     }));
   }
 
   async createNetwork(name: string, driver: string = 'bridge', subnet?: string): Promise<string> {
-    const options: any = { Name: name, Driver: driver };
+    const options = { Name: name, Driver: driver } as Docker.NetworkCreateOptions;
     if (subnet) {
       options.IPAM = { Config: [{ Subnet: subnet }] };
     }
@@ -366,7 +420,7 @@ export class DockerNetworkService {
 
 export class DockerSystemService {
   async getInfo(): Promise<DockerInfo> {
-    const info = await docker.info();
+    const info = await docker.info() as unknown as SystemInfoResult;
     const version = await docker.version();
 
     return {
@@ -386,7 +440,7 @@ export class DockerSystemService {
   }
 
   async getDiskUsage(): Promise<DockerDiskUsage> {
-    const result = await docker.systemDf();
+    const result = await (docker as any).systemDf() as SystemDfResult;
 
     return {
       images: {
@@ -413,14 +467,14 @@ export class DockerSystemService {
   }
 
   async pruneSystem(all: boolean = true, volumes: boolean = true): Promise<any> {
-    return docker.pruneSystem({
+    return (docker as any).pruneSystem({
       all,
       volumes,
     });
   }
 
   events(): NodeJS.ReadableStream {
-    return docker.getEvents();
+    return docker.getEvents() as unknown as NodeJS.ReadableStream;
   }
 }
 

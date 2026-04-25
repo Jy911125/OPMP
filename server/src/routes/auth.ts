@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { config } from '../config/index.js';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
-import { apiRateLimit, authRateLimit } from '../middleware/rateLimit.js';
+import { config } from '../config/index';
+import { authMiddleware } from '../middleware/auth';
+import { authRateLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
@@ -39,8 +39,8 @@ let users = [...defaultUsers];
 
 function generateToken(user: User) {
   const payload = { userId: user.id, username: user.username, role: user.role };
-  const accessToken = jwt.sign(payload, config.JWT_SECRET, { expiresIn: config.JWT_EXPIRES_IN });
-  const refreshToken = jwt.sign(payload, config.JWT_SECRET, { expiresIn: config.JWT_REFRESH_EXPIRES_IN });
+  const accessToken = jwt.sign(payload, config.JWT_SECRET, { expiresIn: config.JWT_EXPIRES_IN } as SignOptions);
+  const refreshToken = jwt.sign(payload, config.JWT_SECRET, { expiresIn: config.JWT_REFRESH_EXPIRES_IN } as SignOptions);
   return { accessToken, refreshToken };
 }
 

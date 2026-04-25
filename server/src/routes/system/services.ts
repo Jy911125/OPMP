@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { authMiddleware, requireRole } from '../../middleware/auth.js';
-import { auditMiddleware } from '../../middleware/audit.js';
-import { CommandExecutor } from '../../utils/executor.js';
-import { OutputParser } from '../../utils/parser.js';
-import type { UserInfo, GroupInfo, ServiceInfo, PackageInfo, CronJob, FirewallRule, NetworkInterface, NetworkConnection } from '../../types/system.js';
+import { authMiddleware, requireRole } from '../../middleware/auth';
+import { auditMiddleware } from '../../middleware/audit';
+import { CommandExecutor } from '../../utils/executor';
+import { OutputParser } from '../../utils/parser';
+import type { UserInfo, GroupInfo, ServiceInfo, PackageInfo, CronJob, FirewallRule, NetworkConnection } from '../../types/system';
 
 const router = Router();
 
@@ -227,7 +227,7 @@ router.post('/services/:name/:action', requireRole('admin', 'operator'), async (
 });
 
 // ============ Packages ============
-router.get('/packages', async (req: Request, res: Response) => {
+router.get('/packages', async (_req: Request, res: Response) => {
   try {
     const result = await CommandExecutor.execute('dpkg', ['-l']);
     const lines = result.stdout.split('\n').filter(l => l.trim()).slice(5);
@@ -329,7 +329,7 @@ router.post('/cron', requireRole('admin', 'operator'), async (req: Request, res:
     const entry = `${schedule} ${command}\n`;
     const existing = await CommandExecutor.execute('crontab', ['-l']);
     const newCrontab = existing.stdout + '\n' + entry;
-    const { execAsync: execPromised } = await import('child_process');
+    const { exec: execPromised } = await import('child_process');
     const { promisify } = await import('util');
     const exec = promisify(execPromised);
     await exec(`echo '${newCrontab.replace(/'/g, "'\\''")}' | crontab -`);
@@ -345,7 +345,7 @@ router.delete('/cron/:id', requireRole('admin', 'operator'), async (req: Request
     const existing = await CommandExecutor.execute('crontab', ['-l']);
     const lines = existing.stdout.split('\n').filter(l => l.trim() && !l.startsWith('#'));
     lines.splice(idx, 1);
-    const { execAsync: execPromised } = await import('child_process');
+    const { exec: execPromised } = await import('child_process');
     const { promisify } = await import('util');
     const exec = promisify(execPromised);
     await exec(`echo '${lines.join('\n').replace(/'/g, "'\\''")}' | crontab -`);
