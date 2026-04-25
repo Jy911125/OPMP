@@ -75,7 +75,7 @@ RUN npm run build
 FROM node:24-alpine
 
 LABEL maintainer="OPMP Team"
-LABEL version="1.1.0"
+LABEL version="1.1.2"
 LABEL description="OPMP Virtual Digital Monitoring Platform - Server"
 
 # 接收构建参数
@@ -102,9 +102,6 @@ COPY --from=frontend-builder /app/client/dist ./public
 # 创建日志目录
 RUN mkdir -p /var/log/opmp && chmod 777 /var/log/opmp
 
-# 创建非root用户
-RUN addgroup -S opmp && adduser -S opmp -G opmp
-
 # 环境变量
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -117,6 +114,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# 启动服务
-USER opmp
+# 启动服务 (使用root运行以访问Docker socket和执行sudo命令)
 CMD ["node", "dist/app.js"]
