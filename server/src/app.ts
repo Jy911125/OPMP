@@ -28,12 +28,15 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", 'ws:', 'wss:'],
+      connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
     },
   },
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
 }));
 app.use(cors({
-  origin: config.CORS_ORIGIN,
+  origin: true,
   credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
