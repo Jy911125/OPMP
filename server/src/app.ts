@@ -82,10 +82,15 @@ setInterval(() => {
 }, config.MONITOR_INTERVAL);
 
 // Subscribe to Docker events
-dockerSystemService.events().on('data', (event: any) => {
-  broadcastDockerEvent(io, JSON.parse(event.toString()));
-}).on('error', (err: Error) => {
-  console.error('Docker events error:', err.message);
+dockerSystemService.events().then((stream: any) => {
+  stream.on('data', (event: any) => {
+    broadcastDockerEvent(io, JSON.parse(event.toString()));
+  });
+  stream.on('error', (err: Error) => {
+    console.error('Docker events error:', err.message);
+  });
+}).catch((err: Error) => {
+  console.error('Docker events stream error:', err.message);
 });
 
 // Start server

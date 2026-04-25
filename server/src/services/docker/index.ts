@@ -473,8 +473,8 @@ export class DockerSystemService {
     });
   }
 
-  events(): NodeJS.ReadableStream {
-    return docker.getEvents() as unknown as NodeJS.ReadableStream;
+  async events(): Promise<NodeJS.ReadableStream> {
+    return docker.getEvents() as unknown as Promise<NodeJS.ReadableStream>;
   }
 }
 
