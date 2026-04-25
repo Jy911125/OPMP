@@ -132,11 +132,14 @@ pull_latest() {
     fi
 
     # 获取最新代码
-    git fetch --all --tags 2>/dev/null || {
+    if ! git fetch --all --tags 2>/dev/null; then
         log_warning "git fetch失败，尝试重新克隆..."
+        # 先切换到安全目录，避免删除当前工作目录
+        cd /tmp
         rm -rf "$PROJECT_DIR"
         git clone "$GITHUB_REPO" "$PROJECT_DIR"
-    }
+        cd "$PROJECT_DIR"
+    fi
 
     # 切换到指定版本
     if [[ -n "$target_version" ]]; then

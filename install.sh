@@ -28,7 +28,7 @@ NC='\033[0m'
 PROJECT_NAME="OPMP"
 PROJECT_DIR="/opt/opmp"
 GITHUB_REPO="https://github.com/Jy911125/OPMP.git"
-SCRIPT_VERSION="1.1.2"
+SCRIPT_VERSION="1.1.3"
 
 # 安装模式
 INSTALL_MODE="clone"
