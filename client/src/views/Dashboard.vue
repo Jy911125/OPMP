@@ -155,7 +155,7 @@ const currentTime = ref('');
 
 let cpuChart: echarts.ECharts | null = null;
 let memChart: echarts.ECharts | null = null;
-let timer: NodeJS.Timeout | null = null;
+let timer: ReturnType<typeof setInterval> | null = null;
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);

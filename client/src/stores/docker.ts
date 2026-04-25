@@ -104,8 +104,8 @@ export const useDockerStore = defineStore('docker', () => {
     await fetchImages();
   }
 
-  async function createVolume(name: string) {
-    await dockerApi.createVolume(name);
+  async function createVolume(name: string, driver?: string) {
+    await dockerApi.createVolume(name, driver);
     await fetchVolumes();
   }
 
