@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { config } from '../config/index';
-import { authMiddleware } from '../middleware/auth';
-import { authRateLimit } from '../middleware/rateLimit';
+import { config } from '../config/index.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { authRateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
 
