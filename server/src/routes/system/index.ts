@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { authMiddleware, requireRole } from '../../middleware/auth';
-import { auditMiddleware } from '../../middleware/audit';
-import { monitorService } from '../../services/system/monitor';
-import { filesystemService } from '../../services/system/files';
-import { processService } from '../../services/system/process';
+import { authMiddleware, requireRole } from '../../middleware/auth.js';
+import { auditMiddleware } from '../../middleware/audit.js';
+import { monitorService } from '../../services/system/monitor.js';
+import { filesystemService } from '../../services/system/files.js';
+import { processService } from '../../services/system/process.js';
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
-import { CommandExecutor } from '../../utils/executor';
-import { validateCommandArgs } from '../../config/whitelist';
-import type { ProcessInfo } from '../../types/system';
+import { CommandExecutor } from '../../utils/executor.js';
+import { validateCommandArgs } from '../../config/whitelist.js';
+import type { ProcessInfo } from '../../types/system.js';
 
 export class ProcessService {
   async getProcessList(): Promise<ProcessInfo[]> {

@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { authMiddleware, requireRole } from '../../middleware/auth';
-import { auditMiddleware } from '../../middleware/audit';
-import { CommandExecutor } from '../../utils/executor';
-import { OutputParser } from '../../utils/parser';
-import type { UserInfo, GroupInfo, ServiceInfo, PackageInfo, CronJob, FirewallRule, NetworkConnection } from '../../types/system';
+import { authMiddleware, requireRole } from '../../middleware/auth.js';
+import { auditMiddleware } from '../../middleware/audit.js';
+import { CommandExecutor } from '../../utils/executor.js';
+import { OutputParser } from '../../utils/parser.js';
+import type { UserInfo, GroupInfo, ServiceInfo, PackageInfo, CronJob, FirewallRule, NetworkConnection } from '../../types/system.js';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.use(auditMiddleware);
 router.get('/users', async (_req: Request, res: Response) => {
   try {
     const result = await CommandExecutor.execute('cat', ['/etc/passwd']);
-    const users: UserInfo[] = result.stdout.split('\n').filter(l => l.trim()).map(line => {
+    const users: UserInfo[] = result.stdout.split('\n').filter((l: string) => l.trim()).map((line: string) => {
       const parts = line.split(':');
       return {
         username: parts[0],
@@ -66,7 +66,7 @@ router.delete('/users/:username', requireRole('admin'), async (req: Request, res
 router.get('/groups', async (_req: Request, res: Response) => {
   try {
     const result = await CommandExecutor.execute('cat', ['/etc/group']);
-    const groups: GroupInfo[] = result.stdout.split('\n').filter(l => l.trim()).map(line => {
+    const groups: GroupInfo[] = result.stdout.split('\n').filter((l: string) => l.trim()).map((line: string) => {
       const parts = line.split(':');
       return {
         name: parts[0],
@@ -105,8 +105,8 @@ router.get('/network/interfaces', async (_req: Request, res: Response) => {
 router.get('/network/connections', async (_req: Request, res: Response) => {
   try {
     const result = await CommandExecutor.execute('ss', ['-tulnp']);
-    const lines = result.stdout.split('\n').filter(l => l.trim()).slice(1);
-    const connections: NetworkConnection[] = lines.map(line => {
+    const lines = result.stdout.split('\n').filter((l: string) => l.trim()).slice(1);
+    const connections: NetworkConnection[] = lines.map((line: string) => {
       const parts = line.trim().split(/\s+/);
       const local = parts[4]?.split(':') || [];
       const remote = parts[5]?.split(':') || [];
@@ -174,7 +174,7 @@ router.get('/services', async (req: Request, res: Response) => {
   try {
     const type = (req.query.type as string) || 'service';
     const result = await CommandExecutor.execute('systemctl', ['list-units', `--type=${type}`, '--all', '--no-pager', '--no-legend']);
-    const services: ServiceInfo[] = result.stdout.split('\n').filter(l => l.trim()).map(line => {
+    const services: ServiceInfo[] = result.stdout.split('\n').filter((l: string) => l.trim()).map((line: string) => {
       const parts = line.trim().split(/\s+/);
       return {
         name: parts[0] || '',
@@ -230,8 +230,8 @@ router.post('/services/:name/:action', requireRole('admin', 'operator'), async (
 router.get('/packages', async (_req: Request, res: Response) => {
   try {
     const result = await CommandExecutor.execute('dpkg', ['-l']);
-    const lines = result.stdout.split('\n').filter(l => l.trim()).slice(5);
-    const packages: PackageInfo[] = lines.map(line => {
+    const lines = result.stdout.split('\n').filter((l: string) => l.trim()).slice(5);
+    const packages: PackageInfo[] = lines.map((line: string) => {
       const parts = line.trim().split(/\s+/);
       return {
         name: parts[1] || '',
@@ -299,8 +299,8 @@ router.get('/cron', async (_req: Request, res: Response) => {
   try {
     const result = await CommandExecutor.execute('crontab', ['-l']);
     const jobs: CronJob[] = result.stdout.split('\n')
-      .filter(l => l.trim() && !l.startsWith('#'))
-      .map((line, idx) => {
+      .filter((l: string) => l.trim() && !l.startsWith('#'))
+      .map((line: string, idx: number) => {
         const parts = line.trim().split(/\s+/);
         return {
           id: String(idx),
@@ -343,7 +343,7 @@ router.delete('/cron/:id', requireRole('admin', 'operator'), async (req: Request
   try {
     const idx = parseInt(req.params.id);
     const existing = await CommandExecutor.execute('crontab', ['-l']);
-    const lines = existing.stdout.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+    const lines = existing.stdout.split('\n').filter((l: string) => l.trim() && !l.startsWith('#'));
     lines.splice(idx, 1);
     const { exec: execPromised } = await import('child_process');
     const { promisify } = await import('util');

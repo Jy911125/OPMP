@@ -1,9 +1,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { CommandExecutor } from '../../utils/executor';
-import { OutputParser } from '../../utils/parser';
-import { validateCommandArgs } from '../../config/whitelist';
-import type { FileInfo } from '../../types/system';
+import { CommandExecutor } from '../../utils/executor.js';
+import { OutputParser } from '../../utils/parser.js';
+import { validateCommandArgs } from '../../config/whitelist.js';
+import type { FileInfo } from '../../types/system.js';
 
 export class FilesystemService {
   private async statFile(filePath: string): Promise<FileInfo | null> {

@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { authMiddleware, requireRole } from '../../middleware/auth';
-import { auditMiddleware } from '../../middleware/audit';
+import { authMiddleware, requireRole } from '../../middleware/auth.js';
+import { auditMiddleware } from '../../middleware/audit.js';
 import {
   containerService, imageService, volumeService,
   networkService, dockerSystemService
-} from '../../services/docker/index';
+} from '../../services/docker/index.js';
 
 const router = Router();
 
@@ -133,7 +133,7 @@ router.post('/images/pull', requireRole('admin', 'operator'), async (req: Reques
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    await imageService.pullImage(name, (event) => {
+    await imageService.pullImage(name, (event: any) => {
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     });
 
