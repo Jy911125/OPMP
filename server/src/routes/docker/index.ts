@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { authMiddleware, requireRole } from '../../middleware/auth.js';
-import { auditMiddleware } from '../../middleware/audit.js';
+import { authMiddleware, requireRole } from '../../middleware/auth';
+import { auditMiddleware } from '../../middleware/audit';
 import {
   containerService, imageService, volumeService,
   networkService, dockerSystemService
-} from '../../services/docker/index.js';
+} from '../../services/docker/index';
 
 const router = Router();
 

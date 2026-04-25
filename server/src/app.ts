@@ -4,15 +4,15 @@ import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
-import { config } from './config/index.js';
-import { apiRateLimit } from './middleware/rateLimit.js';
-import authRoutes from './routes/auth.js';
-import systemRoutes from './routes/system/index.js';
-import servicesRoutes from './routes/system/services.js';
-import dockerRoutes from './routes/docker/index.js';
-import { setupWebSocket, broadcastMonitor, broadcastDockerEvent } from './websocket/index.js';
-import { monitorService } from './services/system/monitor.js';
-import { dockerSystemService } from './services/docker/index.js';
+import { config } from './config/index';
+import { apiRateLimit } from './middleware/rateLimit';
+import authRoutes from './routes/auth';
+import systemRoutes from './routes/system/index';
+import servicesRoutes from './routes/system/services';
+import dockerRoutes from './routes/docker/index';
+import { setupWebSocket, broadcastMonitor, broadcastDockerEvent } from './websocket/index';
+import { monitorService } from './services/system/monitor';
+import { dockerSystemService } from './services/docker/index';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, '..', 'public');
@@ -64,7 +64,7 @@ app.get('*', (_req, res) => {
 });
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Error:', err.message);
   res.status(500).json({ error: err.message || 'Internal server error' });
 });

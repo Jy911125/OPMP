@@ -1,14 +1,11 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { CommandExecutor } from '../utils/executor.js';
-import { OutputParser } from '../utils/parser.js';
-import { validateCommandArgs } from '../config/whitelist.js';
-import type { FileInfo } from '../types/system.js';
+import { CommandExecutor } from '../../utils/executor';
+import { OutputParser } from '../../utils/parser';
+import { validateCommandArgs } from '../../config/whitelist';
+import type { FileInfo } from '../../types/system';
 
 export class FilesystemService {
-  private statCache = new Map<string, { data: any; ts: number }>();
-  private cacheTTL = 10000;
-
   private async statFile(filePath: string): Promise<FileInfo | null> {
     try {
       const normalized = path.normalize(filePath);
@@ -84,7 +81,7 @@ export class FilesystemService {
 
   async deletePath(filePath: string, recursive: boolean = false): Promise<void> {
     const normalized = path.normalize(filePath);
-    const args = recursive ? ['-r', '-f'] : ['-f'];
+    const args = recursive ? ['-r', '-f', normalized] : ['-f', normalized];
     const validation = validateCommandArgs('rm', args);
 
     if (!validation.valid) {
@@ -155,10 +152,10 @@ export class FilesystemService {
 
   async getDiskUsage(dirPath: string): Promise<{ size: number; files: number }[]> {
     const normalized = path.normalize(dirPath);
-    const result = await CommandExecutor.execute('du', ['-s', '-b', '--files0-from=-']);
+    const result = await CommandExecutor.execute('du', ['-s', '-b', normalized]);
 
     const entries: { size: number; files: number }[] = [];
-    for (const line of result.stdout.split('\n').filter(l => l.trim())) {
+    for (const line of result.stdout.split('\n').filter((l: string) => l.trim())) {
       const parts = line.trim().split('\t');
       if (parts.length >= 2) {
         entries.push({

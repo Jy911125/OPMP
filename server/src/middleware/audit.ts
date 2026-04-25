@@ -14,7 +14,7 @@ interface AuditEntry {
 
 const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || '/var/log/opmp/audit.log';
 
-export async function auditMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function auditMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const entry: AuditEntry = {
     timestamp: new Date().toISOString(),
     userId: req.user?.userId || 'anonymous',
