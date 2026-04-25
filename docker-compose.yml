@@ -1,5 +1,5 @@
 version: '3.8'
-# OPMP Version: 1.1.5
+# OPMP Version: 1.1.6
 
 services:
   # OPMP 服务 (后端 + 前端一体化)
@@ -7,7 +7,7 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
-    image: opmp-server:1.1.5
+    image: opmp-server:1.1.6
     container_name: opmp-server
     restart: unless-stopped
     ports:
