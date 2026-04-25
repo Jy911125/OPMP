@@ -28,7 +28,7 @@ NC='\033[0m'
 PROJECT_NAME="OPMP"
 PROJECT_DIR="/opt/opmp"
 GITHUB_REPO="https://github.com/Jy911125/OPMP.git"
-SCRIPT_VERSION="1.0.8"
+SCRIPT_VERSION="1.0.9"
 
 # 安装模式
 INSTALL_MODE="clone"
@@ -258,12 +258,14 @@ configure_docker_mirror() {
     mkdir -p /etc/docker
 
     if [[ "$IS_CHINA" == true ]]; then
-        # 国内镜像
+        # 国内镜像（多个镜像源提高可用性）
         cat > /etc/docker/daemon.json << 'EOF'
 {
     "registry-mirrors": [
         "https://docker.1ms.run",
-        "https://docker.xuanyuan.me"
+        "https://docker.xuanyuan.me",
+        "https://docker.rainbond.cc",
+        "https://dockerhub.icu"
     ],
     "log-opts": {
         "max-size": "10m",
@@ -289,6 +291,9 @@ EOF
 
     systemctl daemon-reload
     systemctl restart docker
+
+    # 等待Docker重启完成
+    sleep 3
 }
 
 # 检查并安装Docker Compose
@@ -484,6 +489,29 @@ build_images() {
     # 移除所有旧版本opmp镜像（不再硬编码版本号）
     docker images opmp-server --format '{{.Repository}}:{{.Tag}}' | while read -r img; do
         docker rmi "$img" 2>/dev/null || true
+    done
+
+    # 预先拉取基础镜像（解决国内网络拉取Docker Hub慢的问题）
+    log_info "拉取Node.js基础镜像..."
+    local base_images=("node:24-alpine")
+    for img in "${base_images[@]}"; do
+        local retry=0
+        local max_retry=3
+        while [[ $retry -lt $max_retry ]]; do
+            if docker pull "$img"; then
+                log_success "镜像拉取成功: $img"
+                break
+            fi
+            retry=$((retry + 1))
+            if [[ $retry -lt $max_retry ]]; then
+                log_warning "镜像拉取失败，重试 ($retry/$max_retry)..."
+                sleep 5
+            else
+                log_error "无法拉取基础镜像 $img，请检查网络或Docker镜像加速配置"
+                log_info "提示: 如果在国内，请确保Docker镜像加速器配置正确"
+                exit 1
+            fi
+        done
     done
 
     # 获取npm registry
