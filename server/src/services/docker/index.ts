@@ -2,7 +2,7 @@ import Docker from 'dockerode';
 import type {
   ContainerInfo, ContainerCreateOptions, ContainerStats,
   ImageInfo, VolumeInfo, DockerNetworkInfo, DockerInfo, DockerDiskUsage
-} from '../../types/docker';
+} from '../../types/docker.js';
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 

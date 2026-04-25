@@ -1,12 +1,12 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
-import { CommandExecutor } from '../../utils/executor';
-import { OutputParser } from '../../utils/parser';
-import { config } from '../../config/index';
+import { CommandExecutor } from '../../utils/executor.js';
+import { OutputParser } from '../../utils/parser.js';
+import { config } from '../../config/index.js';
 import type {
   CpuInfo, CoreInfo, MemoryInfo, DiskInfo,
   NetworkTraffic, SystemInfo, MonitorSnapshot
-} from '../../types/system';
+} from '../../types/system.js';
 
 export class MonitorService {
   private history: MonitorSnapshot[] = [];
